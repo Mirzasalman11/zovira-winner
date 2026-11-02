@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zovira — Winner Draw</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f3f5f4;--card:#fff;--ink:#101a15;--mut:#64726a;--line:#e3e9e5;--acc:#16a34a;--acc-d:#14532d;--acc-ink:#fff;--soft:#ecf7f0;--gold:#f5b942;--err:#dc2626;--sh:0 1px 2px rgba(16,26,21,.04),0 8px 24px rgba(16,26,21,.06);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a110d;--card:#111b15;--ink:#eaf2ed;--mut:#8fa297;--line:#1f2e25;--acc:#34d27b;--acc-d:#a7f3c8;--acc-ink:#04140a;--soft:#13241a;--sh:0 8px 28px rgba(0,0,0,.35)}}
+:root[data-theme="dark"]{--bg:#0a110d;--card:#111b15;--ink:#eaf2ed;--mut:#8fa297;--line:#1f2e25;--acc:#34d27b;--acc-d:#a7f3c8;--acc-ink:#04140a;--soft:#13241a;--sh:0 8px 28px rgba(0,0,0,.35)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px 40px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--acc-d));display:grid;place-items:center;color:#fff;font-size:17px}
+.brand small{font-weight:500;color:var(--mut);font-size:14px}
+.card{background:var(--card);border-radius:24px;box-shadow:var(--sh);border:1px solid var(--line)}
+.btn{font:inherit;font-weight:600;font-size:15px;border:0;border-radius:14px;padding:12px 22px;cursor:pointer;background:var(--soft);color:var(--acc-d);transition:transform .15s,box-shadow .2s,opacity .2s}
+.btn:hover{transform:translateY(-1px)}
+.btn.p{background:linear-gradient(135deg,var(--acc),var(--acc-d));color:#fff;box-shadow:0 8px 20px rgba(22,163,74,.28)}
+.btn.p:disabled{opacity:.5;cursor:default;transform:none}
+.drop{display:flex;align-items:center;gap:18px;padding:20px 24px;border:2px dashed var(--line);border-radius:24px;background:var(--card);cursor:pointer;transition:.2s;margin-bottom:18px}
+.drop:hover,.drop.on{border-color:var(--acc);background:var(--soft)}
+.drop .ic{width:52px;height:52px;border-radius:16px;background:var(--soft);display:grid;place-items:center;font-size:24px;flex:none}
+.drop b{display:block;font-size:16px}.drop span{color:var(--mut);font-size:13px}
+.drop .r{margin-left:auto;text-align:right;font-size:13px;color:var(--mut)}
+@media(max-width:640px){.drop{flex-wrap:wrap}.drop .r{margin:0;text-align:left}}
+#msg{font-size:13px;margin:-6px 4px 14px;min-height:18px;color:var(--mut)}#msg.e{color:var(--err)}#msg.o{color:var(--acc)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.k{padding:18px 20px}.k span{display:block;color:var(--mut);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.k b{font-size:28px;letter-spacing:-.02em}
+.stage{text-align:center;padding:34px 20px 30px;margin-bottom:18px;overflow:hidden;position:relative;background:radial-gradient(600px 260px at 50% 0,var(--soft),transparent 70%),var(--card)}
+.title{font-size:22px;font-weight:800;letter-spacing:-.02em}.sub{color:var(--mut);font-size:14px;margin-top:2px}
+.rule{display:inline-flex;gap:8px;align-items:center;margin-top:12px;background:var(--bg);border-radius:999px;padding:6px 8px 6px 14px;font-size:13px;color:var(--mut)}
+.rule input{width:78px;font:inherit;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 10px;text-align:center}
+.arena{position:relative;height:330px;margin:10px auto 0;width:300px}
+.glow{position:absolute;left:50%;bottom:20px;width:260px;height:260px;margin-left:-130px;border-radius:50%;background:radial-gradient(circle,rgba(245,185,66,.55),transparent 65%);opacity:0;transition:opacity .8s}
+.gift{position:absolute;left:50%;bottom:20px;width:190px;height:180px;margin-left:-95px;cursor:pointer}
+.floor{position:absolute;left:50%;bottom:6px;width:210px;height:18px;margin-left:-105px;border-radius:50%;background:rgba(0,0,0,.14);filter:blur(5px)}
+.gbox{position:absolute;bottom:0;left:0;width:190px;height:118px;border-radius:8px 8px 20px 20px;background:linear-gradient(160deg,#22c55e,#15803d);z-index:3;box-shadow:inset 0 -14px 24px rgba(0,0,0,.15)}
+.gbox:after{content:"";position:absolute;left:50%;top:0;bottom:0;width:30px;margin-left:-15px;background:linear-gradient(180deg,#fcd34d,#f5b942)}
+.lid{position:absolute;bottom:112px;left:-9px;width:208px;height:50px;border-radius:14px;background:linear-gradient(160deg,#34d27b,#16a34a);z-index:5;transform-origin:0 100%;transition:transform .9s cubic-bezier(.3,1.5,.5,1);box-shadow:0 6px 12px rgba(0,0,0,.15)}
+.lid:after{content:"";position:absolute;left:50%;top:0;bottom:0;width:30px;margin-left:-15px;background:linear-gradient(180deg,#fde68a,#f5b942)}
+.bow{position:absolute;left:50%;top:-30px;width:80px;height:36px;margin-left:-40px;z-index:6}
+.bow i{position:absolute;top:0;width:38px;height:32px;border:7px solid #f5b942;border-radius:50% 50% 50% 8%}
+.bow i:first-child{left:0;transform:rotate(-12deg)}.bow i:last-child{right:0;transform:scaleX(-1) rotate(-12deg)}
+.bow u{position:absolute;left:50%;top:14px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:#f5b942}
+.lidwrap{position:absolute;inset:0;z-index:5;pointer-events:none}
+.card-w{position:absolute;left:50%;bottom:70px;width:150px;margin-left:-75px;z-index:2;opacity:0;transform:translateY(40px) scale(.7);transition:transform 1.1s cubic-bezier(.2,1.2,.3,1),opacity .4s;text-align:center}
+.wc{background:var(--card);color:var(--ink);border-radius:16px;padding:12px 10px;box-shadow:0 14px 34px rgba(0,0,0,.22);border:1px solid var(--line)}
+.wc small{display:block;font-size:9px;letter-spacing:.12em;font-weight:700;color:var(--acc);text-transform:uppercase}
+.wc strong{display:block;font-size:17px;line-height:1.2;margin-top:2px;word-break:break-word}
+@keyframes shake{0%,100%{transform:rotate(0)}15%{transform:rotate(-7deg) translateY(-4px)}30%{transform:rotate(6deg)}45%{transform:rotate(-6deg) translateY(-4px)}60%{transform:rotate(5deg)}75%{transform:rotate(-3deg)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.gift.idle{animation:bob 2.6s ease-in-out infinite}
+.gift.shake{animation:shake .5s ease-in-out 3}
+.open .lid{transform:rotate(-62deg) translate(-26px,-22px)}
+.open .card-w{opacity:1;transform:translateY(-185px) scale(1.5)}
+.open .glow{opacity:1}
+.res{min-height:46px;margin-top:6px;color:var(--mut);font-size:14px}
+.res b{color:var(--ink)}
+.hist{color:var(--mut);font-size:12px;margin-top:10px}
+canvas#cf{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:26px 4px 12px}.sec h2{margin:0;font-size:18px;letter-spacing:-.01em}.sec span{color:var(--mut);font-size:13px}
+.box{overflow-x:auto;border-radius:24px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:14px;min-width:600px}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:600;text-align:left;padding:16px 18px;border-bottom:1px solid var(--line)}
+td{padding:13px 18px;border-bottom:1px solid var(--line)}tr:last-child td{border:0}
+.n{text-align:right}tbody tr{transition:background .2s}tbody tr:hover{background:var(--bg)}
+.av{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--acc-d);font-weight:700;font-size:12px;margin-right:10px}
+.pill{background:var(--soft);color:var(--acc-d);font-weight:700;border-radius:999px;padding:3px 11px}
+.bar{height:6px;border-radius:99px;background:var(--line);margin:5px 0 0 auto;width:90px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);border-radius:99px}
+tr.w td{background:var(--soft)}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:18px 0 4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="cf"></canvas>
+<div class="wrap">
+<nav><div class="brand"><div class="logo">Z</div>Zovira <small>Winner Draw</small></div></nav>
+<input type="file" id="f" accept=".csv,.tsv,.xlsx,.xls,.xlsm" hidden>
+<div class="drop" id="dz"><div class="ic">⬆</div><div><b>Drag &amp; drop your orders file</b><span>CSV or Excel · columns are detected automatically · or click to browse</span></div><div class="r"><b id="fn" style="font-size:14px;color:var(--ink)">Sample data</b><span id="fm">Using built-in sample</span></div></div>
+<div id="msg"></div>
+<div class="kpis">
+<div class="card k"><span>Orders</span><b id="ko">0</b></div>
+<div class="card k"><span>Customers</span><b id="kc">0</b></div>
+<div class="card k"><span>Total tokens</span><b id="kt">0</b></div>
+<div class="card k"><span>Total value</span><b id="kv">0</b></div>
+</div>
+<div class="card stage">
+<div class="title">Ready to pick a winner?</div>
+<div class="sub">Every customer’s chance is proportional to their tokens.</div>
+<div class="rule">1 token per <input type="number" id="th" value="1000" min="1"> of each order total</div>
+<div class="arena" id="ar">
+<div class="glow"></div><div class="floor"></div>
+<div class="card-w"><div class="wc"><small>Winner</small><strong id="wn">—</strong></div></div>
+<div class="gift idle" id="gf"><div class="gbox"></div><div class="lidwrap"><div class="lid"><div class="bow"><i></i><i></i><u></u></div></div></div></div>
+</div>
+<div class="res" id="rs">Click the button to open the gift.</div>
+<button class="btn p" id="go">Announce Winner</button>
+<div class="hist" id="hi"></div>
+</div>
+<div class="sec"><h2>Participants</h2><span id="pc"></span></div>
+<div class="card box"><table><thead><tr><th>Customer</th><th>Phone</th><th class="n">Orders</th><th class="n">Total value</th><th class="n">Tokens</th><th class="n">Win chance</th></tr></thead><tbody id="tb"></tbody></table></div>
+<footer>Runs entirely in your browser — your file is never uploaded.</footer>
+</div>
+<script>
+const SAMPLE=[["Sherdil Shahbaz","3054062732",8996.54],["Maaz Hassan","3324343313",7796.58],["master altaf","3121789334",4182.46],["Ch Khaleel","3005863913",4013.98],["Mirza Salman","3066411661",2980.24],["Mirza Salman","3066411661",2650.21],["Umar Tariq","3032973012",2636.77],["Shazea Nasir","3014734539",2480.73],["Ch Khaleel","3005863913",2444.6],["Its Personal","3206887870",2395.25],["Shazea Nasir","3014734539",2280.68],["Sana Ramzan","3096201352",2275.24],["Sardari Production","3077076168",2228.54],["Salman Ramzan","3066411661",2227.23],["Manzoor Ahmed","3213893689",2106.37],["khalida parveen","344735303",2092.09],["Mirza Salman","3066411661",2090.23],["Washma Fatima","3083016400",2025.62],["Bin Sherry","3009437053",2013.92],["Qamar Ul Zaman","923008188358",1984.49],["Mirza Salman","3066411661",1900.23],["Bin Sherry","3009437053",1712.56],["Umar Tariq","3032973012",1696.96],["RANA AHMAD RAJPUT","3289230907",1695.4],["Muizz Imran64","3014925400",1693.03],["M. Abdullah","3054047718",1687.02],["Riazahmad 786","9230078916",1648.3],["Hasher Mehmood","3327622670",1586.2],["Hasher Mehmood","3327622670",1566.9],["Muizz Imran64","3014925400",1538.67],["Mirza Salman","3066411661",1491.54],["Arish Umair","3075052688",1470.66],["Nadan Hum","3218538262",1460.37],["khalida parveen","344735303",1422.09],["Riazahmad 786","3004378916",1408.37],["Pheeda Madam","3084730559",1394.6],["Riazahmad 786","3004378916",1378.3],["Ali Raza","30000000000",1370.24],["Sarfraz Ali","3704020480",1367.69],["Muizz Imran64","3014925400",1363.08],["Muizz Imran64","3014925400",1312.67],["Alee","3094245023",1293.07],["Riazahmad 786","3004378916",1288.37],["Ch Khaleel","3005863913",1285.47],["Mohsin Ali","3019490588",1282.93],["Haji iftikhar Ali Haji iftikhar Ali","3019830110",1264.66],["sidrah sidrah","3099939099",1255.54],["Ahmad Liaqat","3076829002",1213.42],["Riazahmad 786","3004378916",1208.09],["Sherdil Shahbaz","3054062732",1206.58],["Salman Ramzan","3066411661",1203.32],["RANA SAIF","3284913567",1190.83],["Haider Ali","3221859948",1187.09],["RANA SAIF","3284913567",1180.61],["sidrah sidrah","3099939099",1160.98],["Pheeda Madam","3084730559",1160.77],["Pheeda Madam","3084730559",1144.76],["Sherdil Shahbaz","3054062732",1139.64],["Azeem Sultan","3200147606",1137.05],["Muizz Imran64","3014925400",1132.52],["Shazea Nasir","3014734539",1130.73],["Muizz Imran64","3014925400",1121.64],["Tahir Mirza","3002973948",1120.23],["Pheeda Madam","3084730559",1110.74],["Bin Sherry","3009437053",1094.87],["Ahmad Shahid","3049116915",1078.06],["Washma Fatima","3083016400",1075.53],["Maliha Hammad","3060469482",1070.34],["Hania Zahra","3026921909",1070.0],["Sardari Production","3077076168",1064.51],["Sadia Amjad","3121751814",1056.52],["Tahir Mirza","3002973948",1055.94],["Haji iftikhar Ali Haji iftikhar Ali","3019830110",1055.63],["Pheeda Madam","3084730559",1047.99],["Umair Rana","3064355302",1043.8],["Washma Fatima","3083016400",1024.09],["Arish Umair","3075052688",1020.66],["Mirza Salman","3066411661",1020.19],["Ch Khaleel","3005863913",1019.74],["beaconofilm","3247735036",1017.72],["Riaz Ahmad","3076819900",1008.02],["Muhammad Irfan Baig","3224502001",1005.55],["Mirha Noor","3034439566",1005.07],["Muhammad Irfan Baig","3224502001",1003.59],["Pheeda Madam","3084730559",1000.77],["Arish Umair","3075052688",1000.66]];
+let orders=SAMPLE.map(r=>({name:r[0],phone:r[1],total:r[2]})),people=[],pool=[],totalTok=0,winners=[],busy=false;
+const $=id=>document.getElementById(id),fmt=n=>Math.round(n).toLocaleString('en-US');
+const mask=p=>{const d=String(p).replace(/\D/g,'').slice(-10);return d.length<7?(d||'—'):'0'+d.slice(0,3)+'XXXX'+d.slice(-3)};
+const say=(t,c)=>{$('msg').textContent=t;$('msg').className=c||''};
+function build(){
+  const th=Math.max(1,parseFloat($('th').value)||1000),m=new Map();
+  orders.forEach(o=>{const ph=String(o.phone||'').replace(/\D/g,'').slice(-10),k=String(o.name).trim().toLowerCase()+'|'+ph;
+    let p=m.get(k);if(!p){p={name:String(o.name).trim(),phone:ph,orders:0,value:0,tokens:0};m.set(k,p)}
+    p.orders++;p.value+=o.total;p.tokens+=Math.floor(o.total/th)});
+  people=[...m.values()].filter(p=>p.tokens>0).sort((a,b)=>b.tokens-a.tokens||b.value-a.value);
+  totalTok=people.reduce((a,p)=>a+p.tokens,0);pool=[];people.forEach((p,i)=>{for(let k=0;k<p.tokens;k++)pool.push(i)});
+  $('ko').textContent=orders.length;$('kc').textContent=people.length;$('kt').textContent=totalTok;$('kv').textContent=fmt(orders.reduce((a,o)=>a+o.total,0));
+  $('pc').textContent=people.length+' eligible';$('tb').innerHTML='';
+  people.forEach((p,i)=>{const c=totalTok?p.tokens/totalTok*100:0,tr=document.createElement('tr');tr.id='r'+i;
+    const ini=p.name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    tr.innerHTML='<td><span class="av"></span><span class="nm"></span></td><td>'+mask(p.phone)+'</td><td class="n">'+p.orders+'</td><td class="n">'+fmt(p.value)+'</td><td class="n"><span class="pill">'+p.tokens+'</span></td><td class="n">'+c.toFixed(1)+'%<div class="bar"><i style="width:'+Math.min(100,c*6)+'%"></i></div></td>';
+    tr.querySelector('.av').textContent=ini;tr.querySelector('.nm').textContent=p.name;$('tb').appendChild(tr)});
+  $('go').disabled=!pool.length;
+}
+function rnd(n){const a=new Uint32Array(1),lim=Math.floor(4294967296/n)*n;let x;do{crypto.getRandomValues(a)}while((x=a[0])>=lim);return x%n}
+/* confetti */
+const cv=$('cf'),cx=cv.getContext('2d');let ps=[],raf=0;
+function size(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}size();addEventListener('resize',size);
+function burst(){const r=$('ar').getBoundingClientRect(),ox=(r.left+r.width/2)*devicePixelRatio,oy=(r.bottom-170)*devicePixelRatio,cols=['#16a34a','#34d27b','#f5b942','#fde68a','#ffffff','#14532d'];
+  for(let i=0;i<160;i++){const a=Math.random()*Math.PI*2,s=(6+Math.random()*12)*devicePixelRatio;ps.push({x:ox,y:oy,vx:Math.cos(a)*s,vy:Math.sin(a)*s-8*devicePixelRatio,w:(5+Math.random()*7)*devicePixelRatio,h:(3+Math.random()*5)*devicePixelRatio,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:cols[i%cols.length],l:1})}
+  cancelAnimationFrame(raf);(function t(){cx.clearRect(0,0,cv.width,cv.height);ps=ps.filter(p=>p.l>0);ps.forEach(p=>{p.vy+=.35*devicePixelRatio;p.vx*=.985;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.l-=.008;cx.save();cx.globalAlpha=Math.max(p.l,0);cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cx.restore()});if(ps.length)raf=requestAnimationFrame(t);else cx.clearRect(0,0,cv.width,cv.height)})()}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+$('go').onclick=async()=>{
+  if(busy||!pool.length)return;busy=true;const b=$('go'),ar=$('ar'),g=$('gf');b.disabled=true;
+  document.querySelectorAll('tr.w').forEach(e=>e.classList.remove('w'));
+  if(ar.classList.contains('open')){ar.classList.remove('open');$('rs').textContent='Wrapping a new gift…';await wait(900)}
+  const wi=pool[rnd(pool.length)],p=people[wi];$('wn').textContent=p.name;
+  $('rs').textContent='Shaking the gift…';g.classList.remove('idle');g.classList.add('shake');await wait(1550);
+  g.classList.remove('shake');ar.classList.add('open');await wait(550);burst();await wait(500);burst();
+  $('rs').innerHTML='<b>'+p.name.replace(/</g,'&lt;')+'</b> · '+mask(p.phone)+' · '+p.tokens+' of '+totalTok+' tokens ('+(p.tokens/totalTok*100).toFixed(1)+'% chance)';
+  const r=$('r'+wi);r.classList.add('w');r.scrollIntoView({block:'center',behavior:'smooth'});
+  winners.push(p.name);$('hi').textContent='Previous draws: '+winners.join('  →  ');
+  b.textContent='Draw Again';b.disabled=false;busy=false;g.classList.add('idle');
+};
+$('th').onchange=build;
+/* upload */
+const dz=$('dz');dz.onclick=()=>$('f').click();
+['dragenter','dragover'].forEach(e=>addEventListener(e,ev=>{ev.preventDefault();dz.classList.add('on')}));
+['dragleave','drop'].forEach(e=>addEventListener(e,ev=>{ev.preventDefault();if(e==='drop'||ev.target===document.documentElement)dz.classList.remove('on')}));
+addEventListener('drop',ev=>{const f=ev.dataTransfer.files[0];if(f)load(f)});
+$('f').onchange=e=>{if(e.target.files[0])load(e.target.files[0]);e.target.value=''};
+const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+const pick=(h,pats)=>{for(const p of pats){const i=h.findIndex(x=>norm(x).includes(p));if(i>=0)return i}return -1};
+async function load(f){
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    const hi=rows.findIndex(r=>r.some(c=>/name/i.test(c))&&r.filter(c=>c!=='').length>=2);
+    if(hi<0)throw new Error('Could not find a header row with a customer name column.');
+    const h=rows[hi].map(String),ci=pick(h,['customername','clientname','name','customer']),pi=pick(h,['phone','mobile','contact','cell','whatsapp']),
+      ti=pick(h,['totalpkr','grandtotal','ordertotal','total','amount','subtotal','price','value','revenue']),si=pick(h,['status']);
+    if(ci<0)throw new Error('No customer name column found.');if(ti<0)throw new Error('No order total / amount column found.');
+    let skip=0;const out=[];
+    rows.slice(hi+1).forEach(r=>{const nm=String(r[ci]).trim(),v=parseFloat(String(r[ti]).replace(/[^0-9.\-]/g,''));
+      if(!nm||isNaN(v))return;if(si>=0&&/cancel|fail|return|refund/i.test(r[si])){skip++;return}
+      out.push({name:nm,phone:pi>=0?r[pi]:'',total:v})});
+    if(!out.length)throw new Error('No valid rows found.');
+    orders=out;winners=[];$('hi').textContent='';$('ar').classList.remove('open');$('rs').textContent='Click the button to open the gift.';$('go').textContent='Announce Winner';
+    $('fn').textContent=f.name;$('fm').textContent='name: '+h[ci]+' · phone: '+(pi>=0?h[pi]:'—')+' · amount: '+h[ti];
+    build();say(out.length+' orders loaded'+(skip?' ('+skip+' cancelled/failed skipped)':'')+'.','o');
+  }catch(err){say(err.message||'Could not read this file.','e')}
+}
+build();
+</script>
+</body>
+</html>
